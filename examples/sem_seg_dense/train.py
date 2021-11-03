@@ -1,4 +1,9 @@
+
 import __init__
+import os
+
+#os.environ['LD_LIBRARY_PATH'] += ':/usr/local/cuda-11.1/bin64:/usr/local/cuda-11.2/bin64' 
+
 import numpy as np
 import torch
 import torch_geometric.datasets as GeoData
@@ -6,26 +11,29 @@ from torch_geometric.data import DenseDataLoader
 import torch_geometric.transforms as T
 from torch.nn import DataParallel
 from config import OptInit
-from architecture import DenseDeepGCN
+from architecture import DenseDeepGCN, CustomDenseDeepGCN
 from utils.ckpt_util import load_pretrained_models, load_pretrained_optimizer, save_checkpoint
 from utils.metrics import AverageMeter
 import logging
 from tqdm import tqdm
 
 
+
+
 def main():
     opt = OptInit().get_args()
     logging.info('===> Creating dataloader ...')
     train_dataset = GeoData.S3DIS(opt.data_dir, opt.area, True, pre_transform=T.NormalizeScale())
+    print('Hola')
     train_loader = DenseDataLoader(train_dataset, batch_size=opt.batch_size, shuffle=True, num_workers=4)
     test_dataset = GeoData.S3DIS(opt.data_dir, opt.area, train=False, pre_transform=T.NormalizeScale())
     test_loader = DenseDataLoader(test_dataset, batch_size=opt.batch_size, shuffle=False, num_workers=0)
     opt.n_classes = train_loader.dataset.num_classes
 
     logging.info('===> Loading the network ...')
-    model = DenseDeepGCN(opt).to(opt.device)
+    model = CustomDenseDeepGCN(opt).to(opt.device)
     if opt.multi_gpus:
-        model = DataParallel(DenseDeepGCN(opt)).to(opt.device)
+        model = DataParallel(CustomDenseDeepGCN(opt)).to(opt.device)
 
     logging.info('===> loading pre-trained ...')
     model, opt.best_value, opt.epoch = load_pretrained_models(model, opt.pretrained_model, opt.phase)

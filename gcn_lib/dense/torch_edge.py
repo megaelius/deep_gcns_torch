@@ -99,3 +99,16 @@ class DilatedKnnGraph(nn.Module):
             edge_index.append(edgeindex)
         edge_index = torch.stack(edge_index, dim=1)
         return self._dilated(edge_index)
+
+class DenseKnnGraph(nn.Module):
+    """
+    Find the neighbors' indices based on regular knn
+    """
+    def __init__(self, k=9):
+        super(DenseKnnGraph, self).__init__()
+        self.k = k
+        self.knn = dense_knn_matrix
+
+    def forward(self, x):
+        edge_index = self.knn(x, self.k)
+        return edge_index

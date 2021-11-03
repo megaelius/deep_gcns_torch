@@ -113,3 +113,37 @@ class DenseDynBlock2d(nn.Module):
     def forward(self, x):
         dense = self.body(x)
         return torch.cat((x, dense), 1)
+
+class PlainBlock2d(nn.Module):
+    """
+    Plain Graph convolution block
+    """
+    def __init__(self, in_channels, conv='edge', act='relu', norm=None, bias=True):
+        super(PlainBlock2d, self).__init__()
+        self.body = GraphConv2d(in_channels, in_channels, conv, act, norm, bias)
+
+    def forward(self, x, edge_index):
+        return self.body(x, edge_index)
+    
+class ResBlock2d(nn.Module):
+    """
+    Residual Graph convolution block
+    """
+    def __init__(self, in_channels, conv='edge', act='relu', norm=None, bias=True,
+                 res_scale=1):
+        super(ResBlock2d, self).__init__()
+        self.body = GraphConv2d(in_channels, in_channels, conv, act, norm, bias)
+        self.res_scale = res_scale
+    def forward(self, x, edge_index):
+        return self.body(x,edge_index) + x*self.res_scale
+
+class DenseBlock2d(nn.Module):
+    """
+    Dense Graph convolution block
+    """
+    def __init__(self, in_channels, out_channels, conv='edge', act='relu', norm=None, bias=True):
+        super(DenseBlock2d, self).__init__()
+        self.body = GraphConv2d(in_channels, out_channels, conv, act, norm, bias)
+    def forward(self, x, edge_index):
+        dense = self.body(x,edge_index)
+        return torch.cat((x, dense), 1)
