@@ -18,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 class OptInit:
     def __init__(self):
         parser = argparse.ArgumentParser(description='PyTorch implementation of Deep GCN For semantic segmentation')
-
+        #parser.add_argument('--local_rank', type=int, default=-1, metavar='N', help='Local process rank.')  # you need this argument in your scripts for DDP to work
         # ----------------- Base
         parser.add_argument('--phase', default='test', type=str, help='train or test(default)')
         parser.add_argument('--use_cpu', action='store_true', help='use cpu?')
@@ -43,7 +43,7 @@ class OptInit:
         parser.add_argument('--print_freq', default=100, type=int, help='print frequency of training (default: 100)')
         parser.add_argument('--eval_freq', default=1, type=int,
                             help='evaluation frequency of training (default: 1). Set as -1 to disable evaluation')
-        parser.add_argument('--multi_gpus', action='store_true', help='use multi-gpus')
+        parser.add_argument('--n_gpus', type=int, help='Number of GPUs')
         parser.add_argument('--seed', type=int, default=0, help='random seed')
 
         # ----------------- Testing related
@@ -52,7 +52,7 @@ class OptInit:
 
         # ----------------- Model related
         parser.add_argument('--k', default=16, type=int, help='neighbor num (default:16)')
-        parser.add_argument('--block', default='res', type=str, help='graph backbone block type {plain, res, dense}')
+        parser.add_argument('--block', default='plain', type=str, help='graph backbone block type {plain, res, dense}')
         parser.add_argument('--conv', default='edge', type=str, help='graph conv layer {edge, mr}')
         parser.add_argument('--act', default='relu', type=str, help='activation layer {relu, prelu, leakyrelu}')
         parser.add_argument('--norm', default='batch', type=str, help='{batch, instance, None} normalization')
@@ -67,6 +67,7 @@ class OptInit:
         args = parser.parse_args()
 
         args.device = torch.device('cuda' if not args.use_cpu and torch.cuda.is_available() else 'cpu')
+        #args.device = torch.cuda.set_device(args.local_rank)
         self.args = args
 
         # ===> generate log dir
@@ -79,7 +80,7 @@ class OptInit:
                 self.args.ckpt_dir = os.path.join(self.args.exp_dir, "checkpoint")
 
             # logger
-            self.args.writer = SummaryWriter(log_dir=self.args.exp_dir)
+            #self.args.writer = SummaryWriter(log_dir=self.args.exp_dir)
             # loss
             self.args.epoch = -1
             self.args.step = -1
