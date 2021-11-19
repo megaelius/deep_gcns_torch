@@ -1,4 +1,5 @@
 import torch
+from torch.nn.modules.activation import ReLU
 from gcn_lib.dense import BasicConv, GraphConv2d, PlainDynBlock2d, ResDynBlock2d, DenseDynBlock2d, DenseDilatedKnnGraph, DenseKnnGraph, PlainBlock2d, ResBlock2d, DenseBlock2d
 from torch.nn import Sequential as Seq
 
@@ -66,9 +67,19 @@ class CustomDenseDeepGCN(torch.nn.Module):
         conv = opt.conv
         c_growth = channels
         self.n_blocks = opt.n_blocks
-
-        self.knn = DenseKnnGraph(k)
+        self.knn_criterion = opt.knn_criterion
+        if self.knn_criterion == 'MLP':
+            #self.graph_mlp = torch.nn.Sequential(torch.nn.Linear(9,opt.in_channels))
+            self.graph_mlp = torch.nn.Sequential(torch.nn.Linear(9,27),
+                                                 torch.nn.ReLU(),
+                                                 torch.nn.Linear(27,27),
+                                                 torch.nn.ReLU(),
+                                                 torch.nn.Linear(27,9),
+                                                 torch.nn.ReLU(),
+                                                 torch.nn.Linear(9,opt.in_channels))
         self.head = GraphConv2d(opt.in_channels, channels, conv, act, norm, bias)
+        self.knn = DenseKnnGraph(k)
+        
 
         if opt.block.lower() == 'res':
             self.backbone = Seq(*[ResBlock2d(channels, conv, act, norm, bias)
@@ -92,8 +103,15 @@ class CustomDenseDeepGCN(torch.nn.Module):
                                 BasicConv([256, opt.n_classes], None, None, bias)])
 
     def forward(self, inputs):
-        edge_index = self.knn(inputs[:, 0:3])
-        feats = [self.head(inputs, edge_index)]
+        if self.knn_criterion == 'xyz':
+            inputs, edge_index = self.knn(inputs[:, 0:3])
+        elif self.knn_criterion == 'color':
+            inputs, edge_index = self.knn(inputs[:, 3:6])
+        elif self.knn_criterion == 'MLP':
+            #inputs shape is B,9,N_points,1
+            #inputs = self.graph_mlp(inputs.transpose(3,1)).transpose(3,1)
+            mlp_features, edge_index = self.knn(self.graph_mlp(inputs.transpose(3,1)).transpose(3,1))
+        feats = [self.head(mlp_features, edge_index)]
         for i in range(self.n_blocks-1):
             feats.append(self.backbone[i](feats[-1], edge_index))
         feats = torch.cat(feats, dim=1)

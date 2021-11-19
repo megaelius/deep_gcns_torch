@@ -51,7 +51,9 @@ class OptInit:
         parser.add_argument('--pretrained_model', type=str, help='path to pretrained model(default: none)', default='')
 
         # ----------------- Model related
+
         parser.add_argument('--k', default=16, type=int, help='neighbor num (default:16)')
+        parser.add_argument('--knn_criterion', default='xyz', type=str, help='xyz, color or MLP(TODO)')
         parser.add_argument('--block', default='plain', type=str, help='graph backbone block type {plain, res, dense}')
         parser.add_argument('--conv', default='edge', type=str, help='graph conv layer {edge, mr}')
         parser.add_argument('--act', default='relu', type=str, help='activation layer {relu, prelu, leakyrelu}')

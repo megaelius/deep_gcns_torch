@@ -22,7 +22,7 @@ from parallel_wrapper import launch
 import comm
 from torch.utils.tensorboard import SummaryWriter
 
-writer = SummaryWriter()
+writer = SummaryWriter(log_dir='log/mlp4')
 
 def train(model, train_loader, optimizer, criterion, opt, cur_rank):
     opt.losses.reset()
@@ -142,9 +142,9 @@ def epochs(opt):
                 'test_value': opt.test_value,
                 'lr': scheduler.get_lr()[0]
             }
-            writer.add_scalar('Train Loss', info['loss'], opt.iter)
-            writer.add_scalar('Test IOU', info['test_value'], opt.iter)
-            writer.add_scalar('lr', info['lr'], opt.iter)
+            writer.add_scalar('Train Loss', info['loss'], opt.epoch)
+            writer.add_scalar('Test IOU', info['test_value'], opt.epoch)
+            writer.add_scalar('lr', info['lr'], opt.epoch)
 
         logging.info('Saving the final model.Finish!')
 
@@ -153,7 +153,6 @@ def hola():
 
 def main():
     opt = OptInit().get_args()
-    writer.__init__(log_dir=opt.exp_dir)
     '''
     This wrapper taken from detectron2 (https://github.com/facebookresearch/detectron2/blob/main/detectron2/engine/launch.py),
     creates n_gpus processes and launches epochs function on each of them.
